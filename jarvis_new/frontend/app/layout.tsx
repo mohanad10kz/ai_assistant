@@ -51,7 +51,8 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
   return (
     <html
-      lang="en"
+      lang="ar"
+      dir="rtl"
       suppressHydrationWarning
       className={cn(
         publicSans.variable,
@@ -79,11 +80,11 @@ export default async function RootLayout({ children }: RootLayoutProps) {
               className="scale-100 transition-transform duration-300 hover:scale-110"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logo} alt={`${companyName} Logo`} className="block size-6 dark:hidden" />
+              <img src={logo} alt={`شعار ${companyName}`} className="block size-6 dark:hidden" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logoDark ?? logo}
-                alt={`${companyName} Logo`}
+                alt={`شعار ${companyName}`}
                 className="hidden size-6 dark:block"
               />
             </a>

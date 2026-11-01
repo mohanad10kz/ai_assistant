@@ -157,7 +157,7 @@ function TrackDeviceSelect({
     >
       <SelectTrigger className={cn(selectVariants({ size, variant }), className)} {...props}>
         {size !== 'sm' && (
-          <SelectValue className="font-mono text-sm" placeholder={`Select a ${kind}`} />
+          <SelectValue className="font-mono text-sm" placeholder={`اختر ${kind}`} />
         )}
       </SelectTrigger>
       <SelectContent position="popper">

@@ -46,7 +46,7 @@ export function App({ appConfig }: AppProps) {
       <main className="relative z-10 grid h-svh grid-cols-1 place-content-center">
         <ViewController appConfig={appConfig} />
       </main>
-      <StartAudioButton label="Start Audio" />
+        <StartAudioButton label="بدء الصوت" />
       <Toaster
         icons={{
           warning: <WarningIcon weight="bold" />,

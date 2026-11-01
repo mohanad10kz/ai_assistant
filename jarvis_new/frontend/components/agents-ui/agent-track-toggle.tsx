@@ -146,7 +146,7 @@ export function AgentTrackToggle({
       variant={variant}
       pressed={isControlled ? pressed : undefined}
       defaultPressed={isControlled ? undefined : defaultPressed}
-      aria-label={`Toggle ${source}`}
+      aria-label={`تبديل ${source}`}
       onPressedChange={handlePressedChange}
       className={cn(
         agentTrackToggleVariants({

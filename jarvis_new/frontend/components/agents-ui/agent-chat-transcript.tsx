@@ -149,7 +149,7 @@ export function AgentChatTranscript({
                   <MarkerIcon>
                     <AgentChatIndicator size="sm" />
                   </MarkerIcon>
-                  <MarkerContent className="shimmer">Thinking...</MarkerContent>
+                  <MarkerContent className="shimmer">يفكّر...</MarkerContent>
                 </Marker>
               </MessageScrollerItem>
             )}
