@@ -1,4 +1,5 @@
 import textwrap
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from livekit.agents import AgentSession, llm
@@ -11,6 +12,25 @@ def _judge_llm() -> llm.LLM:
     # Judge LLM uses the Google API key already configured in .env.local,
     # avoiding LiveKit Cloud Inference auth (LIVEKIT_API_* credentials).
     return google.LLM(model="gemini-2.5-flash")
+
+
+@pytest.mark.asyncio
+async def test_proactive_greeting_on_enter() -> None:
+    """Ayo greets the user proactively as soon as the session starts."""
+    with patch.object(
+        AgentSession, "generate_reply", new_callable=AsyncMock
+    ) as mock_reply:
+        async with AgentSession() as session:
+            await session.start(Ayo())
+
+    mock_reply.assert_awaited_once()
+    kwargs = mock_reply.await_args.kwargs
+    assert "instructions" in kwargs, (
+        "on_enter must pass instructions to generate_reply so the greeting is scripted"
+    )
+    assert "مرحبا يا البي" in kwargs["instructions"], (
+        "the proactive greeting must use the exact Syrian greeting 'مرحبا يا البي'"
+    )
 
 
 @pytest.mark.asyncio

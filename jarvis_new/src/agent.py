@@ -58,6 +58,16 @@ class Ayo(Agent):
             ],
         )
 
+    async def on_enter(self) -> None:
+        """Greet the user proactively as soon as Ayo joins the session."""
+        await self.session.generate_reply(
+            instructions=(
+                "هذه بداية المكالمة ولم يتكلم المستخدم بعد. "
+                'وجّه تحية ودية باللهجة السورية تبدأ بالعبارة الدقيقة "مرحبا يا البي"، '
+                "ثم قدّم نفسك باسم أيو واعرض مساعدتك بجملة قصيرة واحدة فقط، بدون أي سؤال إضافي."
+            ),
+        )
+
 
 server = AgentServer()
 
