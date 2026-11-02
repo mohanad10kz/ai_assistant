@@ -95,6 +95,37 @@ class _TestPageHandler(BaseHTTPRequestHandler):
 
 
 @pytest.mark.asyncio
+async def test_open_url_recovers_after_browser_closed() -> None:
+    """If the browser/context dies (e.g. user closes the window), the next
+    request must relaunch it instead of failing forever with
+    'Target page, context or browser has been closed'."""
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _TestPageHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    manager = BrowserManager(headless=True)
+    url = f"http://127.0.0.1:{server.server_port}"
+
+    try:
+        await manager.open_url(url)
+        old_page = manager._page
+        assert old_page is not None
+
+        # Simulate the browser window being closed underneath Ayo.
+        await manager._context.close()
+        assert old_page.is_closed()
+
+        # The next request must transparently relaunch the browser.
+        result = await manager.open_url(url)
+        assert result["url"].rstrip("/") == url.rstrip("/")
+        assert manager._page is not old_page
+        assert not manager._page.is_closed()
+    finally:
+        await manager.close()
+        server.shutdown()
+        thread.join(timeout=2)
+
+
+@pytest.mark.asyncio
 async def test_inspect_and_interact_with_local_page() -> None:
     server = ThreadingHTTPServer(("127.0.0.1", 0), _TestPageHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)

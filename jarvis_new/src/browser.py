@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import re
 import sys
 import time
@@ -21,6 +22,9 @@ from playwright.async_api import (
 
 class BrowserError(Exception):
     """A user-facing browser operation failure."""
+
+
+logger = logging.getLogger(__name__)
 
 
 def _focus_window_with_title(title: str, *, timeout_seconds: float = 2.0) -> bool:
@@ -156,15 +160,8 @@ class BrowserManager:
         if self._page is not None:
             return
 
-        self._playwright = await async_playwright().start()
-        self._browser = await self._playwright.chromium.launch(
-            headless=self._headless,
-        )
-        self._context = await self._browser.new_context()
-        self._page = await self._context.new_page()
-        self._page.set_default_timeout(self._timeout_ms)
-        if not self._headless:
-            await _bring_page_window_to_front(self._page)
+        async with self._lock:
+            await self._start_locked()
 
     async def close(self) -> None:
         async with self._lock:
@@ -339,11 +336,58 @@ class BrowserManager:
             await page.keyboard.press(key)
             return {"key": key, "url": page.url}
 
+    def _is_stale(self) -> bool:
+        """True when the tracked page/browser was closed underneath us
+        (e.g. the user closed the window or the process was killed)."""
+        if self._page is None:
+            return False
+        if self._page.is_closed():
+            return True
+        return self._browser is not None and not self._browser.is_connected()
+
     async def _get_page(self) -> Page:
+        if self._is_stale():
+            async with self._lock:
+                if self._is_stale():
+                    logger.info("Browser was closed externally; restarting it.")
+                    await self._discard_dead_browser()
+                    await self._start_locked()
         if self._page is None:
             await self.start()
         assert self._page is not None
         return self._page
+
+    async def _discard_dead_browser(self) -> None:
+        """Reset the internal state, best-effort closing dead handles."""
+        for closer in (
+            self._context.close if self._context is not None else None,
+            self._browser.close if self._browser is not None else None,
+            self._playwright.stop if self._playwright is not None else None,
+        ):
+            if closer is None:
+                continue
+            try:
+                await closer()
+            except Exception:
+                logger.debug(
+                    "Ignoring error while discarding dead browser.", exc_info=True
+                )
+
+        self._page = None
+        self._context = None
+        self._browser = None
+        self._playwright = None
+
+    async def _start_locked(self) -> None:
+        self._playwright = await async_playwright().start()
+        self._browser = await self._playwright.chromium.launch(
+            headless=self._headless,
+        )
+        self._context = await self._browser.new_context()
+        self._page = await self._context.new_page()
+        self._page.set_default_timeout(self._timeout_ms)
+        if not self._headless:
+            await _bring_page_window_to_front(self._page)
 
     @staticmethod
     def _validate_url(url: str) -> None:
